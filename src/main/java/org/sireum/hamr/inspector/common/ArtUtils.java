@@ -1,43 +1,76 @@
 package org.sireum.hamr.inspector.common;
 
-import art.Bridge;
-import art.UConnection;
-import art.UPort;
-import building_control_gen_alarm_ui.Arch;
-import building_control_gen_alarm_ui.Arch$;
+import art.*;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.stereotype.Component;
 import scala.collection.Iterator;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-public final class ArtUtils {
+@Component
+public class ArtUtils {
 
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(ArtUtils.class);
 
-    @NotNull
-    private static final List<Bridge> BRIDGES = ((Supplier<List<Bridge>>) () -> {
-        final int size = Arch$.MODULE$.ad().components().elements().size();
+    private final ArchDiscovery archDiscovery;
+
+    private final List<Bridge> bridges;
+    private final List<UPort> ports;
+    private final List<UConnection> connections;
+
+    /*
+     * Since port and bridge ids are unique across the two categories, pre-allocated arrays can provide fast lookups.
+     * Note that ARCH_BRIDGES_BY_ID and ARCH_PORTS_BY_ID could be replaced with one single Object[] array.
+     */
+    private final Bridge[] ARCH_BRIDGES_BY_ID;
+    private final UPort[] ARCH_PORTS_BY_ID;
+    private final Bridge[] PORT_ID_TO_BRIDGE;
+
+    public ArtUtils(@NotNull ArchDiscovery archDiscovery) {
+        this.archDiscovery = archDiscovery;
+
+        this.bridges = initBridges();
+        this.ports = initPorts();
+        this.connections = initConnections();
+
+        ARCH_BRIDGES_BY_ID = new Bridge[ports.size() + bridges.size()];
+        ARCH_PORTS_BY_ID = new UPort[ports.size() + bridges.size()];
+        PORT_ID_TO_BRIDGE = new Bridge[ports.size() + bridges.size()];
+
+        for (Bridge bridge : bridges) {
+            final int id = bridge.id().toInt();
+            ARCH_BRIDGES_BY_ID[id] = bridge;
+        }
+
+        for (UPort port : ports) {
+            final int id = port.id().toInt();
+            ARCH_PORTS_BY_ID[id] = port;
+            Bridge b = archDiscovery.ad().components().elements().find(it -> it.ports().all().elements().contains(port)).get();
+            PORT_ID_TO_BRIDGE[id] = b;
+        }
+    }
+
+    private List<Bridge> initBridges() {
+        final int size = archDiscovery.ad().components().elements().size();
         final List<Bridge> bridges = new ArrayList<>(size);
-        final Iterator<Bridge> bridgeIterator = Arch$.MODULE$.ad().components().elements().toIterator();
+        final Iterator<Bridge> bridgeIterator = archDiscovery.ad().components().elements().toIterator();
 
         while (bridgeIterator.hasNext()) {
             bridges.add(bridgeIterator.next());
         }
 
         return Collections.unmodifiableList(bridges);
-    }).get();
+    }
 
-    @NotNull
-    private static final List<UPort> PORTS = ((Supplier<List<UPort>>) () -> {
+    private List<UPort> initPorts() {
         final List<UPort> ports = new ArrayList<>();
 
-        for (Bridge bridge : BRIDGES) {
+        for (Bridge bridge : bridges) {
             final Iterator<UPort> portIterator = bridge.ports().all().elements().toIterator();
             while (portIterator.hasNext()) {
                 ports.add(portIterator.next());
@@ -45,83 +78,42 @@ public final class ArtUtils {
         }
 
         return Collections.unmodifiableList(ports);
-    }).get();
+    }
 
-    @NotNull
-    private static final List<UConnection> CONNECTIONS = ((Supplier<List<UConnection>>) () -> {
-        final int size = Arch$.MODULE$.ad().connections().elements().size();
+    private List<UConnection> initConnections() {
+        final int size = archDiscovery.ad().connections().elements().size();
         final List<UConnection> connections = new ArrayList<>(size);
-        final Iterator<UConnection> connectionIterator = Arch$.MODULE$.ad().connections().elements().toIterator();
+        final Iterator<UConnection> connectionIterator = archDiscovery.ad().connections().elements().toIterator();
 
         while (connectionIterator.hasNext()) {
             connections.add(connectionIterator.next());
         }
 
         return Collections.unmodifiableList(connections);
-    }).get();
-
-//    @NotNull
-//    private static final Map<Integer, List<UPort>> BRIDGE_ID_TO_PORTS = ((Supplier<Map<Integer, List<UPort>>>) () -> {
-//        final Map<Integer, List<UPort>> map = new HashMap<>();
-//
-//        for (Bridge bridge : BRIDGES) {
-//            final int count = bridge.ports().all().elements().size();
-//            final List<UPort> mutablePortsList = new ArrayList<>(count);
-//
-//            final Iterator<UPort> portIterator = bridge.ports().all().elements().toIterator();
-//            while (portIterator.hasNext()) {
-//                mutablePortsList.add(portIterator.next());
-//            }
-//
-//            map.put(bridge.id().toInt(), Collections.unmodifiableList(mutablePortsList));
-//        }
-//
-//        return Collections.unmodifiableMap(map);
-//    }).get();
-
-    /*
-     * Since port and bridge ids are unique across the two categories, pre-allocated arrays can provide fast lookups.
-     * Note that ARCH_BRIDGES_BY_ID and ARCH_PORTS_BY_ID could be replaced with one single Object[] array.
-     */
-    private static final Bridge[] ARCH_BRIDGES_BY_ID = new Bridge[PORTS.size() + BRIDGES.size()];
-    private static final UPort[] ARCH_PORTS_BY_ID = new UPort[PORTS.size() + BRIDGES.size()];
-    private static final Bridge[] PORT_ID_TO_BRIDGE = new Bridge[PORTS.size() + BRIDGES.size()];
-    static {
-        for (Bridge bridge : BRIDGES) {
-            final int id = bridge.id().toInt();
-            ARCH_BRIDGES_BY_ID[id] = bridge;
-        }
-
-        for (UPort port : PORTS) {
-            final int id = port.id().toInt();
-            ARCH_PORTS_BY_ID[id] = port;
-            Bridge b = Arch.ad().components().elements().find(it -> it.ports().all().elements().contains(port)).get();
-            PORT_ID_TO_BRIDGE[id] = b;
-        }
     }
 
     @NotNull
-    public static List<Bridge> getBridges() {
-        return BRIDGES;
+    public List<Bridge> getBridges() {
+        return bridges;
     }
 
     @NotNull
-    public static List<UPort> getPorts() {
-        return PORTS;
+    public List<UPort> getPorts() {
+        return ports;
     }
 
     @NotNull
-    public static List<UConnection> getConnections() {
-        return CONNECTIONS;
+    public List<UConnection> getConnections() {
+        return connections;
     }
 
-    private static final String commonBridgePrefix = findCommonBridgePrefix();
+    private final String commonBridgePrefix = findCommonBridgePrefix();
 
     /*
      * This method is called a LOT and uses a pre-allocated O(1) array as a result.
      * todo consider adding bounds checks and returning null for invalid inputs
      */
-    public static Bridge getBridge(int bridgeId) {
+    public Bridge getBridge(int bridgeId) {
         return ARCH_BRIDGES_BY_ID[bridgeId];
     }
 
@@ -129,7 +121,7 @@ public final class ArtUtils {
      * This method is called a LOT and uses a pre-allocated O(1) array as a result.
      * todo consider adding bounds checks and returning null for invalid inputs
      */
-    public static Bridge getBridge(@NotNull UPort port) {
+    public Bridge getBridge(@NotNull UPort port) {
         return PORT_ID_TO_BRIDGE[port.id().toInt()];
     }
 
@@ -137,11 +129,11 @@ public final class ArtUtils {
      * This method is called a LOT and uses a pre-allocated O(1) array as a result.
      * todo consider adding bounds checks and returning null for invalid inputs
      */
-    public static UPort getPort(int portId) {
+    public UPort getPort(int portId) {
         return ARCH_PORTS_BY_ID[portId];
     }
 
-    public static String prettyPrint(@NotNull Bridge bridge) {
+    public String prettyPrint(@NotNull Bridge bridge) {
         return bridge.name().substring(commonBridgePrefix.length());
     }
 
@@ -154,23 +146,23 @@ public final class ArtUtils {
         return port.name().substring(bridge.name().length() + 1); // commonPortPrefixMap.get(bridge).length()
     }
 
-    public static String prettyPrint(@NotNull UPort port) {
+    public String prettyPrint(@NotNull UPort port) {
         return prettyPrint(port, getBridge(port));
     }
 
-    public static String informativePrettyPrint(@NotNull UPort port) {
+    public String informativePrettyPrint(@NotNull UPort port) {
         return String.format("%s [%s]", prettyPrint(port, getBridge(port)), port.mode().toString());
     }
 
-    public static String informativePrettyPrint(@NotNull Bridge bridge) {
+    public String informativePrettyPrint(@NotNull Bridge bridge) {
         return String.format("%s [%s]", prettyPrint(bridge), bridge.dispatchProtocol().toString());
     }
 
-    private static String findCommonBridgePrefix() {
+    private String findCommonBridgePrefix() {
 
         // no need to store outside method because method is called once at initialization
         final String[] bridgeNames =
-                BRIDGES.stream().map(Bridge::name).collect(Collectors.toUnmodifiableList()).toArray(new String[0]);
+                bridges.stream().map(Bridge::name).collect(Collectors.toUnmodifiableList()).toArray(new String[0]);
 
         if (bridgeNames.length == 0) {
             log.warn("ArtUtils was unable to find any bridge names when finding common bridge prefix.");
@@ -230,17 +222,17 @@ public final class ArtUtils {
         return timeBuilder.toString();
     }
 
-    private static final List<Bridge> TO_CONNECTIONS_BRIDGES = ArtUtils.getConnections()
+    private final List<Bridge> TO_CONNECTIONS_BRIDGES = getConnections()
             .stream()
-            .map(connection -> ArtUtils.getBridge(connection.to()))
+            .map(connection -> getBridge(connection.to()))
             .collect(Collectors.toUnmodifiableList());
 
-    private static final List<Bridge> FROM_CONNECTIONS_BRIDGES = ArtUtils.getConnections()
+    private final List<Bridge> FROM_CONNECTIONS_BRIDGES = getConnections()
             .stream()
-            .map(connection -> ArtUtils.getBridge(connection.from()))
+            .map(connection -> getBridge(connection.from()))
             .collect(Collectors.toUnmodifiableList());
 
-    private static final int NUMBER_OF_CONNECTIONS = ArtUtils.getConnections().size();
+    private final int NUMBER_OF_CONNECTIONS = getConnections().size();
 
     /*
 
