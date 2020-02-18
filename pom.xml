@@ -20,13 +20,13 @@
 
     <repositories>
         <repository>
-            <id>jitpack.io</id>
-            <url>https://jitpack.io</url>
-        </repository>
-        <repository>
             <id>project.local.generated</id>
             <name>generated</name>
             <url>file:${generated.repo}</url>
+        </repository>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
         </repository>
     </repositories>
 
@@ -50,6 +50,30 @@
             <groupId>com.github.MatthewWeisCaps</groupId>
             <artifactId>inspector-stream</artifactId>
             <version>c77d5238e5</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.sireum</groupId>
+                    <artifactId>art_2.12</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.7.30</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jetbrains</groupId>
+            <artifactId>annotations</artifactId>
+            <version>17.0.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.9</version>
         </dependency>
 
     </dependencies>
@@ -69,6 +93,7 @@
                         </goals>
                         <configuration>
                             <sources>
+                                <source>src/main/java</source>
                                 <source>src/main/scala</source>
                             </sources>
                         </configuration>
