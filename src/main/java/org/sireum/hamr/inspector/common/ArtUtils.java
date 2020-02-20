@@ -162,7 +162,7 @@ public class ArtUtils {
 
         // no need to store outside method because method is called once at initialization
         final String[] bridgeNames =
-                bridges.stream().map(Bridge::name).collect(Collectors.toUnmodifiableList()).toArray(new String[0]);
+                bridges.stream().map(Bridge::name).collect(Collectors.toList()).toArray(new String[0]);
 
         if (bridgeNames.length == 0) {
             log.warn("ArtUtils was unable to find any bridge names when finding common bridge prefix.");
@@ -222,15 +222,17 @@ public class ArtUtils {
         return timeBuilder.toString();
     }
 
-    private final List<Bridge> TO_CONNECTIONS_BRIDGES = getConnections()
-            .stream()
-            .map(connection -> getBridge(connection.to()))
-            .collect(Collectors.toUnmodifiableList());
+    private final List<Bridge> TO_CONNECTIONS_BRIDGES =
+            Collections.unmodifiableList(getConnections()
+                    .stream()
+                    .map(connection -> getBridge(connection.to()))
+                    .collect(Collectors.toList()));
 
-    private final List<Bridge> FROM_CONNECTIONS_BRIDGES = getConnections()
-            .stream()
-            .map(connection -> getBridge(connection.from()))
-            .collect(Collectors.toUnmodifiableList());
+    private final List<Bridge> FROM_CONNECTIONS_BRIDGES =
+            Collections.unmodifiableList(getConnections()
+                .stream()
+                .map(connection -> getBridge(connection.from()))
+                .collect(Collectors.toList()));
 
     private final int NUMBER_OF_CONNECTIONS = getConnections().size();
 
