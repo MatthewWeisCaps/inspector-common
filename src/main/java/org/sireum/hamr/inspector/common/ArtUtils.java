@@ -13,15 +13,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 @Lazy
 @Component("artUtils")
 public class ArtUtils {
 
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(ArtUtils.class);
-
-    private final InspectionBlueprint inspectionBlueprint;
 
     private final List<Bridge> bridges;
     private final List<UPort> ports;
@@ -35,12 +32,14 @@ public class ArtUtils {
     private final UPort[] ARCH_PORTS_BY_ID;
     private final Bridge[] PORT_ID_TO_BRIDGE;
 
-    public ArtUtils(InspectionBlueprint inspectionBlueprint) {
-        this.inspectionBlueprint = inspectionBlueprint;
+    private final String commonBridgePrefix;
 
-        this.bridges = initBridges();
-        this.ports = initPorts();
-        this.connections = initConnections();
+    public ArtUtils(InspectionBlueprint inspectionBlueprint) {
+        this.bridges = initBridges(inspectionBlueprint);
+        this.ports = initPorts(bridges);
+        this.connections = initConnections(inspectionBlueprint);
+
+        this.commonBridgePrefix = findCommonBridgePrefix();
 
         ARCH_BRIDGES_BY_ID = new Bridge[ports.size() + bridges.size()];
         ARCH_PORTS_BY_ID = new UPort[ports.size() + bridges.size()];
@@ -59,7 +58,7 @@ public class ArtUtils {
         }
     }
 
-    private List<Bridge> initBridges() {
+    private static List<Bridge> initBridges(InspectionBlueprint inspectionBlueprint) {
         final int size = inspectionBlueprint.ad().components().elements().size();
         final List<Bridge> bridges = new ArrayList<>(size);
         final Iterator<Bridge> bridgeIterator = inspectionBlueprint.ad().components().elements().toIterator();
@@ -71,7 +70,7 @@ public class ArtUtils {
         return Collections.unmodifiableList(bridges);
     }
 
-    private List<UPort> initPorts() {
+    private static List<UPort> initPorts(List<Bridge> bridges) {
         final List<UPort> ports = new ArrayList<>();
 
         for (Bridge bridge : bridges) {
@@ -84,7 +83,7 @@ public class ArtUtils {
         return Collections.unmodifiableList(ports);
     }
 
-    private List<UConnection> initConnections() {
+    private static List<UConnection> initConnections(InspectionBlueprint inspectionBlueprint) {
         final int size = inspectionBlueprint.ad().connections().elements().size();
         final List<UConnection> connections = new ArrayList<>(size);
         final Iterator<UConnection> connectionIterator = inspectionBlueprint.ad().connections().elements().toIterator();
@@ -110,8 +109,6 @@ public class ArtUtils {
     public List<UConnection> getConnections() {
         return connections;
     }
-
-    private final String commonBridgePrefix = findCommonBridgePrefix();
 
     /*
      * This method is called a LOT and uses a pre-allocated O(1) array as a result.
@@ -166,7 +163,7 @@ public class ArtUtils {
 
         // no need to store outside method because method is called once at initialization
         final String[] bridgeNames =
-                bridges.stream().map(Bridge::name).collect(Collectors.toList()).toArray(new String[0]);
+                bridges.stream().map(Bridge::name).toArray(String[]::new);
 
         if (bridgeNames.length == 0) {
             log.warn("ArtUtils was unable to find any bridge names when finding common bridge prefix.");
@@ -177,12 +174,9 @@ public class ArtUtils {
     }
 
     /**
-     *
      * (Inspired by: https://stackoverflow.com/questions/625433/how-to-convert-milliseconds-to-x-mins-x-seconds-in-java)
-     * @param timeInMillis
-     * @return
      */
-    public static final String formatTime(long timeInMillis) {
+    public static String formatTime(long timeInMillis) {
         final StringBuilder timeBuilder = new StringBuilder();
 
         final long days = TimeUnit.MILLISECONDS.toDays(timeInMillis);
@@ -226,35 +220,4 @@ public class ArtUtils {
         return timeBuilder.toString();
     }
 
-    private final List<Bridge> TO_CONNECTIONS_BRIDGES =
-            Collections.unmodifiableList(getConnections()
-                    .stream()
-                    .map(connection -> getBridge(connection.to()))
-                    .collect(Collectors.toList()));
-
-    private final List<Bridge> FROM_CONNECTIONS_BRIDGES =
-            Collections.unmodifiableList(getConnections()
-                .stream()
-                .map(connection -> getBridge(connection.from()))
-                .collect(Collectors.toList()));
-
-    private final int NUMBER_OF_CONNECTIONS = getConnections().size();
-
-    /*
-
-    Port Usage (source: HAMR doc (12) - (14)
-    ====================================================================================================================
-    Event       | Event and Alarm Transmission | Events, Alarms   | Queueing on receiving thread (1 to N based on protocol)
-    Event Data  | Message Transmission         | Messages         | Queueing on receiving thread (1 to N based on protocol)
-    Data        | Transmission of State Data   | Sensors, Streams | No Queueing
-    ====================================================================================================================
-
-    Port Connectivity
-    ============================================
-    Event       | N input ports | N output ports
-    Event Data  | N input ports | N output ports
-    Data        | 1 input port  | N output ports
-    ============================================
-
-     */
 }
