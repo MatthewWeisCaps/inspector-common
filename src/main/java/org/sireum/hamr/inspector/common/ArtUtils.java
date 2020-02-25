@@ -17,7 +17,7 @@ public class ArtUtils {
 
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(ArtUtils.class);
 
-    private final ArchDiscovery archDiscovery;
+    private final InspectionBlueprint inspectionBlueprint;
 
     private final List<Bridge> bridges;
     private final List<UPort> ports;
@@ -31,8 +31,8 @@ public class ArtUtils {
     private final UPort[] ARCH_PORTS_BY_ID;
     private final Bridge[] PORT_ID_TO_BRIDGE;
 
-    public ArtUtils(@NotNull ArchDiscovery archDiscovery) {
-        this.archDiscovery = archDiscovery;
+    public ArtUtils(@NotNull InspectionBlueprint inspectionBlueprint) {
+        this.inspectionBlueprint = inspectionBlueprint;
 
         this.bridges = initBridges();
         this.ports = initPorts();
@@ -50,15 +50,15 @@ public class ArtUtils {
         for (UPort port : ports) {
             final int id = port.id().toInt();
             ARCH_PORTS_BY_ID[id] = port;
-            Bridge b = archDiscovery.ad().components().elements().find(it -> it.ports().all().elements().contains(port)).get();
+            Bridge b = inspectionBlueprint.ad().components().elements().find(it -> it.ports().all().elements().contains(port)).get();
             PORT_ID_TO_BRIDGE[id] = b;
         }
     }
 
     private List<Bridge> initBridges() {
-        final int size = archDiscovery.ad().components().elements().size();
+        final int size = inspectionBlueprint.ad().components().elements().size();
         final List<Bridge> bridges = new ArrayList<>(size);
-        final Iterator<Bridge> bridgeIterator = archDiscovery.ad().components().elements().toIterator();
+        final Iterator<Bridge> bridgeIterator = inspectionBlueprint.ad().components().elements().toIterator();
 
         while (bridgeIterator.hasNext()) {
             bridges.add(bridgeIterator.next());
@@ -81,9 +81,9 @@ public class ArtUtils {
     }
 
     private List<UConnection> initConnections() {
-        final int size = archDiscovery.ad().connections().elements().size();
+        final int size = inspectionBlueprint.ad().connections().elements().size();
         final List<UConnection> connections = new ArrayList<>(size);
-        final Iterator<UConnection> connectionIterator = archDiscovery.ad().connections().elements().toIterator();
+        final Iterator<UConnection> connectionIterator = inspectionBlueprint.ad().connections().elements().toIterator();
 
         while (connectionIterator.hasNext()) {
             connections.add(connectionIterator.next());

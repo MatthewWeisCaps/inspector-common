@@ -23,7 +23,7 @@ trait Rule extends Comparable[Rule] {
   def attachment: String = ""
   def link: String = ""
 
-  def rule(in: Flux[Msg]): Publisher[_ <: Any]
+  def rule(in: Flux[Msg], utils: ArtUtils): Publisher[_ <: Any]
 
   override def toString: String = name
 

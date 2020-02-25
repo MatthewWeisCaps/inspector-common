@@ -6,7 +6,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Function;
 
-public interface ArchDiscovery {
+public interface InspectionBlueprint {
 
     @NotNull
     ArchitectureDescription ad();
