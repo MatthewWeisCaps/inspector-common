@@ -3,6 +3,10 @@ package org.sireum.hamr.inspector.common;
 import art.*;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.context.annotation.DependsOn;
+import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.ImportResource;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import scala.collection.Iterator;
 
@@ -12,6 +16,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+@Lazy
 @Component
 public class ArtUtils {
 
