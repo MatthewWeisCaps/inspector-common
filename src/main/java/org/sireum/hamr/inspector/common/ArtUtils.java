@@ -5,6 +5,8 @@ import art.UConnection;
 import art.UPort;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.stereotype.Component;
 import scala.collection.Iterator;
 
 import java.util.ArrayList;
@@ -13,6 +15,8 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+@Lazy
+@Component
 public class ArtUtils {
 
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(ArtUtils.class);
@@ -31,7 +35,7 @@ public class ArtUtils {
     private final UPort[] ARCH_PORTS_BY_ID;
     private final Bridge[] PORT_ID_TO_BRIDGE;
 
-    public ArtUtils(@NotNull InspectionBlueprint inspectionBlueprint) {
+    public ArtUtils(InspectionBlueprint inspectionBlueprint) {
         this.inspectionBlueprint = inspectionBlueprint;
 
         this.bridges = initBridges();
