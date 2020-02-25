@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Lazy
-@Component
+@Component("artUtils")
 public class ArtUtils {
 
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(ArtUtils.class);
