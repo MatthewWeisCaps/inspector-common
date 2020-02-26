@@ -5,7 +5,8 @@ import org.sireum.hamr.inspector.stream.Flux
 
 trait Filter {
   def name: String = getClass.getSimpleName
-  def filter(in: Flux[Msg]): Publisher[Msg]
+
+  def filter(in: Flux[Msg], utils: ArtUtils): Publisher[Msg]
 
   def rules: Iterable[_ <: Rule] = Seq.empty[Rule]
 

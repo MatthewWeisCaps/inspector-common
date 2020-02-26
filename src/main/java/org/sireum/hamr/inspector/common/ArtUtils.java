@@ -112,25 +112,28 @@ public class ArtUtils {
 
     /*
      * This method is called a LOT and uses a pre-allocated O(1) array as a result.
-     * todo consider adding bounds checks and returning null for invalid inputs
      */
+    @NotNull
     public Bridge getBridge(int bridgeId) {
+        boundsCheck(bridgeId, ARCH_BRIDGES_BY_ID.length);
         return ARCH_BRIDGES_BY_ID[bridgeId];
     }
 
     /*
      * This method is called a LOT and uses a pre-allocated O(1) array as a result.
-     * todo consider adding bounds checks and returning null for invalid inputs
      */
+    @NotNull
     public Bridge getBridge(@NotNull UPort port) {
+        boundsCheck(port.id().toInt(), PORT_ID_TO_BRIDGE.length);
         return PORT_ID_TO_BRIDGE[port.id().toInt()];
     }
 
     /*
      * This method is called a LOT and uses a pre-allocated O(1) array as a result.
-     * todo consider adding bounds checks and returning null for invalid inputs
      */
+    @NotNull
     public UPort getPort(int portId) {
+        boundsCheck(portId, ARCH_PORTS_BY_ID.length);
         return ARCH_PORTS_BY_ID[portId];
     }
 
@@ -218,6 +221,14 @@ public class ArtUtils {
         timeBuilder.append(String.format("%d ms", millis));
 
         return timeBuilder.toString();
+    }
+
+    private static void boundsCheck(int index, int arraySize) throws IllegalArgumentException {
+        if (index < 0 || arraySize < index) {
+            log.error("Attempted to retrieve Arch data from illegal index. " +
+                    "Is the target HAMR project up-to-date with the session being inspected?");
+            throw new IllegalArgumentException("");
+        }
     }
 
 }
