@@ -5,5 +5,5 @@ import art.{ArchitectureDescription, DataContent}
 trait InspectionBlueprint {
   def ad(): ArchitectureDescription
   def serializer(): DataContent => org.sireum.String
-  def deserializer(): String => DataContent
+  def deserializer(): org.sireum.String => DataContent
 }
