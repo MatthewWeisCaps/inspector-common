@@ -7,12 +7,12 @@
     <parent>
         <groupId>com.github.MatthewWeisCaps</groupId>
         <artifactId>inspector-bom</artifactId>
-        <version>0.2-SNAPSHOT</version>
+        <version>0.4-SNAPSHOT</version>
     </parent>
 
     <groupId>org.sireum.hamr</groupId>
     <artifactId>inspector-common</artifactId>
-    <version>0.2-SNAPSHOT</version>
+    <version>0.4-SNAPSHOT</version>
     <name>inspector-common</name>
     <description>Common traits for HAMR Inspector libraries</description>
 
@@ -31,16 +31,16 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.github.MatthewWeisCaps</groupId>
-            <artifactId>inspector-stream</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.sireum.runtime</groupId>
             <artifactId>library_2.12</artifactId>
         </dependency>
         <dependency>
             <groupId>org.sireum.slang-embedded-art</groupId>
             <artifactId>slang-embedded-art_2.12</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.github.MatthewWeisCaps</groupId>
+            <artifactId>inspector-stream</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -107,26 +107,13 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-enforcer-plugin</artifactId>
-                <version>3.0.0-M2</version>
+                <artifactId>maven-source-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>enforce-version</id>
+                        <id>attach-sources</id>
                         <goals>
-                            <goal>enforce</goal>
+                            <goal>jar-no-fork</goal>
                         </goals>
-                        <phase>validate</phase>
-                        <configuration>
-                            <rules>
-                                <requireSameVersions>
-                                    <dependencies>
-                                        <dependency>org.sireum.art_2.12</dependency>
-                                    </dependencies>
-                                </requireSameVersions>
-                            </rules>
-                            <fail>true</fail>
-                            <failFast>true</failFast>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>
