@@ -35,7 +35,7 @@ import art._
  * @param dst - the UPort source to which the message was sent
  * @param data - the DataContent contained within the message
  * @param timestamp - the millisecond timestamp of when message was sent. Time is based off of Art's internal clock.
- * @param uid - a unique id assigned to this message. Note message uids are not unique across sessions, only streams
+ * @param sequence - the 0-based sequence number of this message at its particular timestamp.
  */
 case class Msg(src: UPort,
                dst: UPort,
@@ -43,7 +43,7 @@ case class Msg(src: UPort,
                dstBridge: Bridge,
                data: DataContent,
                timestamp: Long,
-               uid: Long) {
+               sequence: Long) {
 
   //  // classifier utility functions
   def isSrcPeriodic: Boolean = Msg.isSrcPeriodic(this)
@@ -119,7 +119,7 @@ object Msg {
    * @param b the message to which a is compared
    * @return true iff a was received by the inspector before b AND a != b
    */
-  def comesBefore(a: Msg, b: Msg): Boolean = a.uid < b.uid
+  def comesBefore(a: Msg, b: Msg): Boolean = a.sequence < b.sequence
   /**
    * Returns whether or not Msg a was received by the Inspector after Msg b.
    *
@@ -129,6 +129,6 @@ object Msg {
    * @param b the message to which a is compared
    * @return true iff a was received by the inspector after b AND a != b
    */
-  def comesAfter(a: Msg, b: Msg): Boolean = a.uid > b.uid
+  def comesAfter(a: Msg, b: Msg): Boolean = a.sequence > b.sequence
 
 }

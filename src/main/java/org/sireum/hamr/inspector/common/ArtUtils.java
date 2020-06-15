@@ -28,20 +28,25 @@ package org.sireum.hamr.inspector.common;
 import art.Bridge;
 import art.UConnection;
 import art.UPort;
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.context.annotation.Lazy;
-import org.springframework.stereotype.Component;
 import scala.collection.Iterator;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
-@Lazy
-@Component("artUtils")
-public class ArtUtils {
+/**
+ * A helper class containing utility methods for querying and displaying information from an
+ * {@link art.ArchitectureDescription}.
+ *
+ * This class is thread-safe and contains only pure methods. It is encouraged (but not required) for users to
+ * create one instance of this class per {@link InspectionBlueprint} and to share the one instance across their project
+ * as needed. (This class would be a singleton itself if {@link InspectionBlueprint} wasn't determined at runtime).
+ *
+ */
+public final class ArtUtils {
 
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(ArtUtils.class);
 
@@ -59,7 +64,11 @@ public class ArtUtils {
 
     private final String commonBridgePrefix;
 
-    public ArtUtils(InspectionBlueprint inspectionBlueprint) {
+    public static ArtUtils create(@NotNull InspectionBlueprint inspectionBlueprint) {
+        return new ArtUtils(inspectionBlueprint);
+    }
+
+    ArtUtils(@NotNull InspectionBlueprint inspectionBlueprint) {
         this.bridges = initBridges(inspectionBlueprint);
         this.ports = initPorts(bridges);
         this.connections = initConnections(inspectionBlueprint);
@@ -121,17 +130,17 @@ public class ArtUtils {
     }
 
     @NotNull
-    public List<Bridge> getBridges() {
+    public final List<Bridge> getBridges() {
         return bridges;
     }
 
     @NotNull
-    public List<UPort> getPorts() {
+    public final List<UPort> getPorts() {
         return ports;
     }
 
     @NotNull
-    public List<UConnection> getConnections() {
+    public final List<UConnection> getConnections() {
         return connections;
     }
 
@@ -139,7 +148,7 @@ public class ArtUtils {
      * This method is called a LOT and uses a pre-allocated O(1) array as a result.
      */
     @NotNull
-    public Bridge getBridge(int bridgeId) {
+    public final Bridge getBridge(int bridgeId) {
         boundsCheck(bridgeId, ARCH_BRIDGES_BY_ID.length);
         return ARCH_BRIDGES_BY_ID[bridgeId];
     }
@@ -148,7 +157,7 @@ public class ArtUtils {
      * This method is called a LOT and uses a pre-allocated O(1) array as a result.
      */
     @NotNull
-    public Bridge getBridge(@NotNull UPort port) {
+    public final Bridge getBridge(@NotNull UPort port) {
         boundsCheck(port.id().toInt(), PORT_ID_TO_BRIDGE.length);
         return PORT_ID_TO_BRIDGE[port.id().toInt()];
     }
@@ -157,12 +166,12 @@ public class ArtUtils {
      * This method is called a LOT and uses a pre-allocated O(1) array as a result.
      */
     @NotNull
-    public UPort getPort(int portId) {
+    public final UPort getPort(int portId) {
         boundsCheck(portId, ARCH_PORTS_BY_ID.length);
         return ARCH_PORTS_BY_ID[portId];
     }
 
-    public String prettyPrint(@NotNull Bridge bridge) {
+    public final String prettyPrint(@NotNull Bridge bridge) {
         return bridge.name().substring(commonBridgePrefix.length());
     }
 
@@ -175,15 +184,15 @@ public class ArtUtils {
         return port.name().substring(bridge.name().length() + 1); // commonPortPrefixMap.get(bridge).length()
     }
 
-    public String prettyPrint(@NotNull UPort port) {
+    public final String prettyPrint(@NotNull UPort port) {
         return prettyPrint(port, getBridge(port));
     }
 
-    public String informativePrettyPrint(@NotNull UPort port) {
+    public final String informativePrettyPrint(@NotNull UPort port) {
         return String.format("%s (%s) [%s]", prettyPrint(port, getBridge(port)), port.mode().toString(), port.id().toString());
     }
 
-    public String informativePrettyPrint(@NotNull Bridge bridge) {
+    public final String informativePrettyPrint(@NotNull Bridge bridge) {
         return String.format("%s (%s) [%s]", prettyPrint(bridge), bridge.dispatchProtocol().toString(), bridge.id().toString());
     }
 
@@ -198,7 +207,28 @@ public class ArtUtils {
             return "";
         }
 
-        return StringUtils.getCommonPrefix(bridgeNames);
+        final int minNameLength = Stream.of(bridgeNames).mapToInt(String::length).min().orElse(0);
+
+        final StringBuilder prefix = new StringBuilder(minNameLength);
+
+        // for each char (up to the biggest prefix size)
+        for (int ci=0; ci < minNameLength; ci++) {
+
+            // get char of first bridge (safe because return if bridgeNames.length == 0 above)
+            final char refChar = bridgeNames[0].charAt(ci);
+
+            // check if all other bridges share the same common letter, if not then return what we have
+            for (int bi=1; bi < bridgeNames.length; bi++) {
+                if (refChar != bridgeNames[bi].charAt(ci)) {
+                    return prefix.toString();
+                }
+            }
+
+            // if all name have same character at index i, add the char to the string and continue
+            prefix.append(refChar);
+        }
+
+        return prefix.toString();
     }
 
     /**
@@ -250,9 +280,11 @@ public class ArtUtils {
 
     private static void boundsCheck(int index, int arraySize) throws IllegalArgumentException {
         if (index < 0 || arraySize < index) {
-            log.error("Attempted to retrieve Arch data from illegal index. " +
-                    "Is the target HAMR project up-to-date with the session being inspected?");
-            throw new IllegalArgumentException("");
+            final String errorString = "Attempted to retrieve Arch data from illegal index " + index +
+                    " for array of size " + arraySize + ".";
+            final IllegalArgumentException ex = new IllegalArgumentException(errorString);
+            log.error(errorString + " Is the target HAMR project up-to-date with the session being inspected?", ex);
+            throw ex;
         }
     }
 

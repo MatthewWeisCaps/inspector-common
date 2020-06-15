@@ -28,11 +28,42 @@ package org.sireum.hamr.inspector.common
 import org.reactivestreams.Publisher
 import org.sireum.hamr.inspector.stream.Flux
 
+/**
+ * A filter for Art's message stream that has an (optionally) overridable unique name.
+ *
+ * Contains a "filter" function that converts a "Flux" (i.e. a real-time or prerecorded stream) of Msgs to a
+ * "Publisher" (which is just Flux's parent/super-interface).
+ *
+ * Also contains a "name" function that can be overwritten to give this filter a custom name.
+ *
+ */
 trait Filter {
+
+  /**
+   * The UNIQUE name of this Filter. Used for logging and displaying in user interfaces.
+   *
+   * By default the name will equal the simple name of its implementation.
+   *
+   * @return The name associated with this filter
+   */
   def name: String = getClass.getSimpleName
 
-  def filter(in: Flux[Msg], utils: ArtUtils): Publisher[Msg]
+  /**
+   * A function which can be applied to a Flux of messages to return a new (reactive-)stream of messages.
+   *
+   * This function MUST BE PURE (free of side effects).
+   *
+   * Note: A Flux is a reactive-stream implementation that includes many operators out of the box.
+   *
+   * @param in an input (reactive-)stream of messages to which the filter will be applied.
+   * @return a new (reactive-)stream of messages that has possibly undergone some transformation
+   */
+  def filter(in: Flux[Msg]): Publisher[Msg]
 
+  /**
+   * Associate a set of rules with this filter. This is currently experimental in the interface and may be removed.
+   * @return
+   */
   def rules: Iterable[_ <: Rule] = Seq.empty[Rule]
 
   override def toString: String = name

@@ -28,15 +28,40 @@ package org.sireum.hamr.inspector.common
 import org.reactivestreams.Publisher
 import org.sireum.hamr.inspector.stream.Flux
 
+/**
+ * Rules are like Filters, except that while
+ *    filters map FROM message-stream TO message-stream,
+ *      rules map FROM message-stream TO stream-of-anything.
+ *
+ * The "catch" is that the Inspector doesn't observe the rule's output, but instead any errors it throws when running.
+ * These errors treated as rule failures and will be visible to the user in the GUI (or some other way depending on
+ * the inspector-services implementation).
+ */
 trait Rule extends Comparable[Rule] {
 
+  /**
+   * The UNIQUE name of this rule. Used for logging and displaying in user interfaces.
+   *
+   * By default the name will equal the simple name of its implementation.
+   *
+   * @return The UNIQUE name of this rule.
+   */
   def name: String = getClass.getSimpleName
 
+  /**
+   * A function which can be applied to a Flux of messages to return a new (reactive-)stream whose output is ignored
+   * but is monitored for errors thrown within to indicate that the rule has failed.
+   *
+   * This function MUST BE PURE (free of side effects).
+   *
+   * Note: A Flux is a reactive-stream implementation that includes many operators out of the box.
+   *
+   * @param in an input (reactive-)stream of messages to which the rule will be applied.
+   * @return a new (reactive-)stream to watch for exceptions.
+   */
   def rule(in: Flux[Msg], utils: ArtUtils): Publisher[_ <: Any]
 
   override def toString: String = name
 
   override def compareTo(o: Rule): Int = name.compareTo(o.name)
-
-  final override def hashCode(): Int = super.hashCode()
 }

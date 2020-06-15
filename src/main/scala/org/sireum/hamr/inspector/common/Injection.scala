@@ -27,10 +27,41 @@ package org.sireum.hamr.inspector.common
 
 import art.{Bridge, DataContent, UPort}
 
+/**
+ * A blueprint for injecting a message into Art's data stream to(/from) a particular incoming(/outgoing) port.
+ */
 trait Injection {
+
+  /**
+   * The UNIQUE name of this injection. Used for logging and displaying in user interfaces.
+   *
+   * @return The name associated with this injection
+   */
   def name: String = getClass.getSimpleName
-  def port: UPort
+
+  /**
+   * The bridge of the message to be injected.
+   *
+   * // todo This information is currently redundant but can't be removed until updating ArtDebug
+   *
+   * @return the bridge to associate this injection with
+   */
   def bridge: Bridge
+
+  /**
+   * The port of the message to be injected. Messages injected into the event stream will:
+   *   - claim to be FROM the port if the port is OUTGOING
+   *   - be delivered TO the port if the port is INCOMING
+   *
+   * @return the port to associate this injection with
+   */
+  def port: UPort
+
+  /**
+   * The DataContent attached to the injected msg
+   *
+   * @return The DataContent attached to the injected msg
+   */
   def dataContent: DataContent
 
   override def toString: String = name
