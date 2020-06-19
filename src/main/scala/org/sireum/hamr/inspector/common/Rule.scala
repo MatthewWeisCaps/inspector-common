@@ -59,7 +59,7 @@ trait Rule extends Comparable[Rule] {
    * @param in an input (reactive-)stream of messages to which the rule will be applied.
    * @return a new (reactive-)stream to watch for exceptions.
    */
-  def rule(in: Flux[Msg], utils: ArtUtils): Publisher[_ <: Any]
+  def rule(in: Flux[Msg]): Publisher[_ <: Any]
 
   override def toString: String = name
 

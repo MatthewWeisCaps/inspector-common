@@ -119,7 +119,12 @@ object Msg {
    * @param b the message to which a is compared
    * @return true iff a was received by the inspector before b AND a != b
    */
-  def comesBefore(a: Msg, b: Msg): Boolean = a.sequence < b.sequence
+  def comesBefore(a: Msg, b: Msg): Boolean =
+    if (a.timestamp == b.timestamp) {
+      a.sequence < b.sequence
+    } else {
+      a.timestamp < b.timestamp
+    }
   /**
    * Returns whether or not Msg a was received by the Inspector after Msg b.
    *
@@ -129,6 +134,11 @@ object Msg {
    * @param b the message to which a is compared
    * @return true iff a was received by the inspector after b AND a != b
    */
-  def comesAfter(a: Msg, b: Msg): Boolean = a.sequence > b.sequence
+  def comesAfter(a: Msg, b: Msg): Boolean =
+    if (a.timestamp == b.timestamp) {
+      a.sequence > b.sequence
+    } else {
+      a.timestamp > b.timestamp
+    }
 
 }
